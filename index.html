@@ -1,210 +1,268 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculadora de Notas</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 15px;
-      background: #fff0f6;
-      color: #4a148c;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-    }
-    th, td {
-      border: 1px solid #9c27b0;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #ce93d8;
-    }
-    input[type="text"], input[type="number"] {
-      width: 90%;
-      padding: 5px;
-      font-size: 1em;
-      border: 1px solid #9c27b0;
-      border-radius: 4px;
-    }
-    button {
-      background: #9c27b0;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      cursor: pointer;
-      border-radius: 5px;
-      margin: 0 3px;
-    }
-    button:hover {
-      background: #6a1b9a;
-    }
-    #promedio {
-      font-weight: bold;
-      font-size: 1.2em;
-      text-align: center;
-      margin-top: 10px;
-    }
-    .btn-eliminar {
-      background: #e91e63;
-    }
-    .btn-eliminar:hover {
-      background: #ad1457;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculadora de Notas por Ramos</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 15px;
+    background: #fff0f6;
+    color: #4a148c;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .ramo {
+    background: #f8bbd0;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+  }
+  .ramo h2 {
+    margin-top: 0;
+    font-family: 'Pacifico', cursive;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .btn-eliminar-ramo {
+    background: #e91e63;
+    border: none;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .btn-eliminar-ramo:hover {
+    background: #ad1457;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #9c27b0;
+    padding: 8px;
+    text-align: center;
+  }
+  th {
+    background: #ce93d8;
+  }
+  input[type="text"], input[type="number"] {
+    width: 90%;
+    padding: 5px;
+    font-size: 1em;
+    border: 1px solid #9c27b0;
+    border-radius: 4px;
+  }
+  button {
+    background: #9c27b0;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 0 3px;
+  }
+  button:hover {
+    background: #6a1b9a;
+  }
+  .btn-eliminar {
+    background: #e91e63;
+  }
+  .btn-eliminar:hover {
+    background: #ad1457;
+  }
+  .promedio {
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: right;
+  }
+  form {
+    margin-top: 10px;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <h1>Calculadora de Notas</h1>
+<h1>Calculadora de Notas por Ramos</h1>
 
-  <table id="tablaNotas">
-    <thead>
-      <tr>
-        <th>Asignatura / Nota</th>
-        <th>Valor (%)</th>
-        <th>Nota</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Aquí van las notas -->
-    </tbody>
-  </table>
+<!-- Form para agregar ramo -->
+<form id="formAgregarRamo">
+  <input type="text" id="inputNombreRamo" placeholder="Nombre del ramo" required />
+  <button type="submit">Agregar Ramo</button>
+</form>
 
-  <form id="formAgregarNota">
-    <input type="text" id="inputNombre" placeholder="Nombre asignatura o nota" required />
-    <input type="number" id="inputValor" placeholder="Valor %" min="0" max="100" required />
-    <input type="number" id="inputNota" placeholder="Nota (0-100)" min="0" max="100" step="0.1" required />
-    <button type="submit">Agregar Nota</button>
-  </form>
+<div id="contenedorRamos"></div>
 
-  <div id="promedio">Promedio ponderado: 0</div>
+<script>
+  const contenedorRamos = document.getElementById('contenedorRamos');
+  const formAgregarRamo = document.getElementById('formAgregarRamo');
+  const inputNombreRamo = document.getElementById('inputNombreRamo');
 
-  <script>
-    const tablaNotas = document.querySelector('#tablaNotas tbody');
-    const formAgregarNota = document.getElementById('formAgregarNota');
-    const promedioDiv = document.getElementById('promedio');
+  let ramos = [];
 
-    let notas = [];
+  // Cargar datos desde localStorage
+  function cargarDatos() {
+    const guardado = localStorage.getItem('ramosNotas');
+    if (guardado) {
+      ramos = JSON.parse(guardado);
+    }
+  }
 
-    // Cargar notas guardadas al inicio
-    function cargarNotas() {
-      const guardado = localStorage.getItem('notasApp');
-      if (guardado) {
-        notas = JSON.parse(guardado);
+  // Guardar datos a localStorage
+  function guardarDatos() {
+    localStorage.setItem('ramosNotas', JSON.stringify(ramos));
+  }
+
+  // Calcular promedio ponderado de un ramo
+  function calcularPromedio(notas) {
+    let sumaPesos = 0;
+    let sumaNotas = 0;
+    notas.forEach(n => {
+      sumaPesos += n.valor;
+      sumaNotas += n.valor * n.nota;
+    });
+    if (sumaPesos === 0) return 0;
+    return (sumaNotas / sumaPesos).toFixed(2);
+  }
+
+  // Crear HTML para cada ramo
+  function crearRamoHTML(ramo, index) {
+    const div = document.createElement('div');
+    div.className = 'ramo';
+
+    div.innerHTML = `
+      <h2>${ramo.nombre} 
+        <button class="btn-eliminar-ramo" title="Eliminar ramo">X</button>
+      </h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre nota</th>
+            <th>Valor (%)</th>
+            <th>Nota</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ramo.notas.map((nota, i) => `
+            <tr>
+              <td>${nota.nombre}</td>
+              <td>${nota.valor}</td>
+              <td>${nota.nota}</td>
+              <td>
+                <button class="btn-editar" data-ramo="${index}" data-nota="${i}">Editar</button>
+                <button class="btn-eliminar" data-ramo="${index}" data-nota="${i}">Eliminar</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="promedio">Promedio ponderado: ${calcularPromedio(ramo.notas)}</div>
+
+      <form class="formAgregarNota" data-ramo="${index}">
+        <input type="text" placeholder="Nombre nota" required />
+        <input type="number" placeholder="Valor %" min="0" max="100" required />
+        <input type="number" placeholder="Nota (0-100)" min="0" max="100" step="0.1" required />
+        <button type="submit">Agregar Nota</button>
+      </form>
+    `;
+
+    // Botón eliminar ramo
+    div.querySelector('.btn-eliminar-ramo').onclick = () => {
+      if(confirm(`¿Seguro quieres eliminar el ramo "${ramo.nombre}"?`)){
+        ramos.splice(index, 1);
+        guardarDatos();
+        mostrarRamos();
       }
-    }
+    };
 
-    // Guardar notas
-    function guardarNotas() {
-      localStorage.setItem('notasApp', JSON.stringify(notas));
-    }
-
-    // Calcular promedio ponderado
-    function calcularPromedio() {
-      let sumaPesos = 0;
-      let sumaNotas = 0;
-      notas.forEach(n => {
-        sumaPesos += n.valor;
-        sumaNotas += n.valor * n.nota;
-      });
-      if (sumaPesos === 0) return 0;
-      return (sumaNotas / sumaPesos).toFixed(2);
-    }
-
-    // Mostrar notas en la tabla
-    function mostrarNotas() {
-      tablaNotas.innerHTML = '';
-      notas.forEach((nota, index) => {
-        const tr = document.createElement('tr');
-
-        const tdNombre = document.createElement('td');
-        tdNombre.textContent = nota.nombre;
-
-        const tdValor = document.createElement('td');
-        tdValor.textContent = nota.valor;
-
-        const tdNota = document.createElement('td');
-        tdNota.textContent = nota.nota;
-
-        const tdAcciones = document.createElement('td');
-
-        // Botón eliminar
-        const btnEliminar = document.createElement('button');
-        btnEliminar.textContent = 'Eliminar';
-        btnEliminar.className = 'btn-eliminar';
-        btnEliminar.onclick = () => {
-          notas.splice(index, 1);
-          guardarNotas();
-          mostrarNotas();
-          actualizarPromedio();
-        };
-
-        // Botón editar
-        const btnEditar = document.createElement('button');
-        btnEditar.textContent = 'Editar';
-        btnEditar.onclick = () => {
-          // Al hacer click en editar, carga los valores en el formulario para editar
-          document.getElementById('inputNombre').value = nota.nombre;
-          document.getElementById('inputValor').value = nota.valor;
-          document.getElementById('inputNota').value = nota.nota;
-
-          // Elimina la nota actual para editarla al agregar
-          notas.splice(index, 1);
-          guardarNotas();
-          mostrarNotas();
-          actualizarPromedio();
-        };
-
-        tdAcciones.appendChild(btnEditar);
-        tdAcciones.appendChild(btnEliminar);
-
-        tr.appendChild(tdNombre);
-        tr.appendChild(tdValor);
-        tr.appendChild(tdNota);
-        tr.appendChild(tdAcciones);
-
-        tablaNotas.appendChild(tr);
-      });
-    }
-
-    // Actualiza promedio en pantalla
-    function actualizarPromedio() {
-      promedioDiv.textContent = 'Promedio ponderado: ' + calcularPromedio();
-    }
-
-    // Agregar nota desde el formulario
-    formAgregarNota.addEventListener('submit', e => {
+    // Form para agregar nota
+    div.querySelector('.formAgregarNota').onsubmit = e => {
       e.preventDefault();
-      const nombre = document.getElementById('inputNombre').value.trim();
-      const valor = parseFloat(document.getElementById('inputValor').value);
-      const nota = parseFloat(document.getElementById('inputNota').value);
+      const inputs = e.target.querySelectorAll('input');
+      const nombreNota = inputs[0].value.trim();
+      const valor = parseFloat(inputs[1].value);
+      const nota = parseFloat(inputs[2].value);
 
-      if (nombre && !isNaN(valor) && !isNaN(nota)) {
-        notas.push({ nombre, valor, nota });
-        guardarNotas();
-        mostrarNotas();
-        actualizarPromedio();
-
-        formAgregarNota.reset();
+      if(nombreNota && !isNaN(valor) && !isNaN(nota)){
+        ramos[index].notas.push({nombre: nombreNota, valor, nota});
+        guardarDatos();
+        mostrarRamos();
+        e.target.reset();
       }
+    };
+
+    // Botones editar y eliminar notas
+    div.querySelectorAll('.btn-eliminar').forEach(btn => {
+      btn.onclick = () => {
+        const ramoIdx = btn.getAttribute('data-ramo');
+        const notaIdx = btn.getAttribute('data-nota');
+        if(confirm('¿Eliminar esta nota?')){
+          ramos[ramoIdx].notas.splice(notaIdx,1);
+          guardarDatos();
+          mostrarRamos();
+        }
+      };
     });
 
-    // Inicialización
-    cargarNotas();
-    mostrarNotas();
-    actualizarPromedio();
-  </script>
+    div.querySelectorAll('.btn-editar').forEach(btn => {
+      btn.onclick = () => {
+        const ramoIdx = btn.getAttribute('data-ramo');
+        const notaIdx = btn.getAttribute('data-nota');
+        const nota = ramos[ramoIdx].notas[notaIdx];
+
+        // Cargar datos para editar en el form de ese ramo
+        const form = div.querySelector('.formAgregarNota');
+        const inputs = form.querySelectorAll('input');
+        inputs[0].value = nota.nombre;
+        inputs[1].value = nota.valor;
+        inputs[2].value = nota.nota;
+
+        // Borrar la nota que vamos a editar para reemplazarla al guardar
+        ramos[ramoIdx].notas.splice(notaIdx,1);
+        guardarDatos();
+        mostrarRamos();
+      };
+    });
+
+    return div;
+  }
+
+  // Mostrar todos los ramos
+  function mostrarRamos() {
+    contenedorRamos.innerHTML = '';
+    ramos.forEach((ramo, i) => {
+      contenedorRamos.appendChild(crearRamoHTML(ramo, i));
+    });
+  }
+
+  // Agregar nuevo ramo
+  formAgregarRamo.addEventListener('submit', e => {
+    e.preventDefault();
+    const nombre = inputNombreRamo.value.trim();
+    if(nombre){
+      ramos.push({nombre, notas: []});
+      guardarDatos();
+      mostrarRamos();
+      inputNombreRamo.value = '';
+    }
+  });
+
+  // Inicializar
+  cargarDatos();
+  mostrarRamos();
+
+</script>
 
 </body>
 </html>
