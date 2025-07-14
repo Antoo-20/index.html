@@ -8,8 +8,8 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: #e3f2fd;
-      color: #01579b;
+      background: #ffeef2;
+      color: #880e4f;
       margin: 0 auto;
       padding: 20px;
       max-width: 800px;
@@ -18,7 +18,7 @@
     h1 {
       text-align: center;
       font-family: 'Playfair Display', serif;
-      color: #0277bd;
+      color: #ad1457;
       margin-bottom: 30px;
     }
 
@@ -31,13 +31,13 @@
 
     input[type="text"], input[type="number"] {
       padding: 8px;
-      border: 1px solid #4fc3f7;
+      border: 1px solid #f8bbd0;
       border-radius: 5px;
       font-size: 1rem;
     }
 
     button {
-      background: #039be5;
+      background: #f06292;
       color: white;
       border: none;
       padding: 8px 12px;
@@ -47,11 +47,11 @@
     }
 
     button:hover {
-      background: #0277bd;
+      background: #ec407a;
     }
 
     .ramo {
-      background: #b3e5fc;
+      background: #fce4ec;
       border-radius: 10px;
       margin-bottom: 15px;
       overflow: hidden;
@@ -59,7 +59,7 @@
     }
 
     .ramo-header {
-      background: #4fc3f7;
+      background: #f48fb1;
       color: white;
       padding: 12px 15px;
       font-family: 'Playfair Display', serif;
@@ -82,20 +82,20 @@
     }
 
     th, td {
-      border: 1px solid #81d4fa;
+      border: 1px solid #f8bbd0;
       padding: 8px;
       text-align: center;
     }
 
     th {
-      background: #b3e5fc;
+      background: #fce4ec;
     }
 
     .promedio {
       text-align: right;
       font-weight: bold;
       margin-top: 10px;
-      color: #01579b;
+      color: #880e4f;
     }
 
     .formAgregarNota input {
@@ -104,11 +104,19 @@
     }
 
     .btn-eliminar {
-      background: #ef5350;
+      background: #e57373;
     }
 
     .btn-eliminar:hover {
-      background: #c62828;
+      background: #d32f2f;
+    }
+
+    .btn-editar {
+      background: #ba68c8;
+    }
+
+    .btn-editar:hover {
+      background: #8e24aa;
     }
   </style>
 </head>
@@ -124,7 +132,7 @@
   <div id="contenedorRamos"></div>
 
   <script>
-    const ramos = JSON.parse(localStorage.getItem('ramosNotas')) || [];
+    let ramos = JSON.parse(localStorage.getItem('ramosNotas')) || [];
     const contenedorRamos = document.getElementById('contenedorRamos');
     const formAgregarRamo = document.getElementById('formAgregarRamo');
     const inputNombreRamo = document.getElementById('inputNombreRamo');
@@ -158,14 +166,19 @@
                 <th>Nombre nota</th>
                 <th>Valor %</th>
                 <th>Nota</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              ${ramo.notas.map(n => `
+              ${ramo.notas.map((n, i) => `
                 <tr>
                   <td>${n.nombre}</td>
                   <td>${n.valor}</td>
                   <td>${n.nota}</td>
+                  <td>
+                    <button class="btn-editar" data-r="${index}" data-n="${i}">Editar</button>
+                    <button class="btn-eliminar btn-eliminar-nota" data-r="${index}" data-n="${i}">X</button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -173,11 +186,11 @@
 
           <div class="promedio">Promedio: ${calcularPromedio(ramo.notas)}</div>
 
-          <form class="formAgregarNota">
+          <form class="formAgregarNota" data-r="${index}">
             <input type="text" placeholder="Nombre nota" required />
             <input type="number" placeholder="Valor %" required />
             <input type="number" placeholder="Nota" step="0.1" required />
-            <button type="submit">Agregar Nota</button>
+            <button type="submit">Guardar Nota</button>
           </form>
         </div>
       `;
@@ -188,10 +201,10 @@
         body.style.display = body.style.display === 'none' ? 'block' : 'none';
       };
 
-      const btnEliminar = div.querySelector('.btn-eliminar');
-      btnEliminar.onclick = e => {
+      const btnEliminarRamo = div.querySelector('.btn-eliminar');
+      btnEliminarRamo.onclick = e => {
         e.stopPropagation();
-        if (confirm('¿Eliminar ramo?')) {
+        if (confirm('¿Eliminar este ramo?')) {
           ramos.splice(index, 1);
           guardarDatos();
           mostrarRamos();
@@ -199,18 +212,51 @@
       };
 
       const formNota = div.querySelector('.formAgregarNota');
+      let editando = null;
+
       formNota.onsubmit = e => {
         e.preventDefault();
         const inputs = formNota.querySelectorAll('input');
         const nombre = inputs[0].value.trim();
         const valor = parseFloat(inputs[1].value);
         const nota = parseFloat(inputs[2].value);
+
         if (nombre && !isNaN(valor) && !isNaN(nota)) {
-          ramo.notas.push({ nombre, valor, nota });
+          if (editando !== null) {
+            ramos[index].notas[editando] = { nombre, valor, nota };
+            editando = null;
+          } else {
+            ramos[index].notas.push({ nombre, valor, nota });
+          }
           guardarDatos();
           mostrarRamos();
         }
       };
+
+      div.querySelectorAll('.btn-eliminar-nota').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          const r = parseInt(btn.dataset.r);
+          const n = parseInt(btn.dataset.n);
+          ramos[r].notas.splice(n, 1);
+          guardarDatos();
+          mostrarRamos();
+        };
+      });
+
+      div.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          const r = parseInt(btn.dataset.r);
+          const n = parseInt(btn.dataset.n);
+          const nota = ramos[r].notas[n];
+          const inputs = formNota.querySelectorAll('input');
+          inputs[0].value = nota.nombre;
+          inputs[1].value = nota.valor;
+          inputs[2].value = nota.nota;
+          editando = n;
+        };
+      });
 
       return div;
     }
